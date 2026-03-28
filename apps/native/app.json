@@ -2,6 +2,7 @@
   "expo": {
     "name": "native",
     "slug": "native",
+    "owner": "dotolee",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -36,6 +37,11 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "63764e04-130b-4ed0-8000-72e425f2764c"
+      }
     }
   }
 }
