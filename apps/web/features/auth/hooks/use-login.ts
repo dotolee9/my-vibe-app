@@ -12,10 +12,16 @@ export function useLogin() {
   const login = async (provider: AuthProvider) => {
     setIsLoading(true);
     setError(null);
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get('next');
+    const callbackUrl = new URL('/auth/callback', window.location.origin);
+    if (next && next.startsWith('/')) {
+      callbackUrl.searchParams.set('next', next);
+    }
 
     const result = await auth.loginWithOAuth(
       provider,
-      `${window.location.origin}/auth/callback`,
+      callbackUrl.toString(),
     );
 
     if (result.ok) {

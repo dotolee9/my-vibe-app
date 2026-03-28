@@ -31,11 +31,12 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
 
   if (!user && protectedRoutes.some((route) => pathname.startsWith(route))) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
+    url.searchParams.set('next', `${pathname}${search}`);
     return NextResponse.redirect(url);
   }
 

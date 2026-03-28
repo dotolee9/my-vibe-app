@@ -6,7 +6,9 @@ import { handleOAuthCallbackUseCase } from '@repo/use-cases/auth/handle-oauth-ca
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/';
+  const requestedNext = searchParams.get('next');
+  const next =
+    requestedNext && requestedNext.startsWith('/') ? requestedNext : '/';
 
   if (code) {
     const supabase = await createServerSupabase();

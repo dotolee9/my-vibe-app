@@ -1,6 +1,7 @@
 'use client';
 
 import { useLogin } from '@/features/auth/hooks/use-login';
+import { useSearchParams } from 'next/navigation';
 import type { AuthProvider } from '@repo/domain/entities/user';
 
 const providers: {
@@ -32,6 +33,10 @@ const providers: {
 
 export function LoginForm() {
   const { login, isLoading, error } = useLogin();
+  const searchParams = useSearchParams();
+  const oauthError = searchParams.get('error');
+  const authErrorMessage =
+    oauthError === 'auth_failed' ? '로그인에 실패했습니다. 다시 시도해 주세요.' : null;
 
   return (
     <div className="space-y-3">
@@ -48,8 +53,10 @@ export function LoginForm() {
         </button>
       ))}
 
-      {error && (
-        <p className="mt-4 text-center text-sm text-red-500">{error}</p>
+      {(error || authErrorMessage) && (
+        <p className="mt-4 text-center text-sm text-red-500">
+          {error ?? authErrorMessage}
+        </p>
       )}
     </div>
   );
