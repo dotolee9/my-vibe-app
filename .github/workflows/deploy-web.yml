@@ -1,7 +1,3 @@
-# Vercel GitHub 연동(vercel.com > Project > Git)을 사용하면
-# 이 워크플로우 없이도 자동 배포된다.
-# CLI 기반 배포가 필요한 경우(환경별 분기, 수동 제어 등)에만 이 워크플로우를 사용한다.
-
 name: Deploy Web (Vercel)
 
 on:
@@ -15,49 +11,55 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    name: Deploy to Vercel
+  wait-for-deployment:
+    name: Wait for Vercel Deployment
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     environment:
       name: production
-      url: ${{ steps.deploy.outputs.url }}
+      url: ${{ steps.deployment.outputs.url }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Pull Vercel environment
-        run: npx vercel pull --cwd apps/web --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Wait for Vercel deployment
+        id: deployment
         env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Build with Vercel
-        run: npx vercel build --cwd apps/web --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Deploy to Vercel
-        id: deploy
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          url=$(npx vercel deploy --cwd apps/web --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }})
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          echo "Waiting for Vercel deployment for commit: $COMMIT_SHA"
+
+          for i in $(seq 1 60); do
+            RESPONSE=$(curl -s \
+              "https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=10" \
+              -H "Authorization: Bearer ${VERCEL_TOKEN}")
+
+            DEPLOYMENT=$(echo "$RESPONSE" | jq -r \
+              --arg sha "$COMMIT_SHA" \
+              '[.deployments[] | select(.meta.githubCommitSha == $sha)] | first // empty')
+
+            if [ -n "$DEPLOYMENT" ] && [ "$DEPLOYMENT" != "null" ]; then
+              STATE=$(echo "$DEPLOYMENT" | jq -r '.readyState')
+              URL=$(echo "$DEPLOYMENT" | jq -r '.url')
+
+              echo "State: $STATE  |  URL: https://$URL"
+
+              if [ "$STATE" = "READY" ]; then
+                echo "url=https://$URL" >> "$GITHUB_OUTPUT"
+                echo "Deployment successful: https://$URL"
+                exit 0
+              elif [ "$STATE" = "ERROR" ] || [ "$STATE" = "CANCELED" ]; then
+                echo "Deployment failed with state: $STATE"
+                exit 1
+              fi
+            else
+              echo "[$i/60] Deployment not found yet, waiting..."
+            fi
+
+            sleep 15
+          done
+
+          echo "Timeout: deployment not completed within 15 minutes"
+          exit 1
