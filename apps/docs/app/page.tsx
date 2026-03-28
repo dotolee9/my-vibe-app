@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Image, { type ImageProps } from "next/image";
 import { Button } from "@repo/ui/button";
 import styles from "./page.module.css";
@@ -7,7 +8,7 @@ type Props = Omit<ImageProps, "src"> & {
   srcDark: string;
 };
 
-const ThemeImage = (props: Props) => {
+const ThemeImage = (props: Props): ReactNode => {
   const { srcLight, srcDark, ...rest } = props;
 
   return (
@@ -18,7 +19,7 @@ const ThemeImage = (props: Props) => {
   );
 };
 
-export default function Home() {
+export default function Home(): ReactNode {
   return (
     <div className={styles.page}>
       <main className={styles.main}>
