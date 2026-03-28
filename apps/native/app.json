@@ -15,7 +15,10 @@
     },
     "ios": {
       "bundleIdentifier": "com.dotolee.myvibe",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.dotolee.myvibe",

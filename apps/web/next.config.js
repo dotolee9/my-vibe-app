@@ -5,9 +5,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  turbopack: {
-    root: path.resolve(__dirname, '../..'),
-  },
+  outputFileTracingRoot: path.resolve(__dirname, '../..'),
 };
 
 export default nextConfig;

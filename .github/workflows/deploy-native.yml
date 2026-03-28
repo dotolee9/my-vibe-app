@@ -68,5 +68,5 @@ jobs:
       - name: Trigger EAS Build
         run: |
           PROFILE="${{ github.event.inputs.profile || 'production' }}"
-          PLATFORM="${{ github.event.inputs.platform || 'all' }}"
+          PLATFORM="${{ github.event.inputs.platform || 'android' }}"
           eas build --platform "$PLATFORM" --profile "$PROFILE" --non-interactive
